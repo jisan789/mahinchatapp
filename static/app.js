@@ -1,5 +1,5 @@
 // LiveChat — Real-time WebSocket Client
-// Jisu (PIN 1470) ↔ Jenu (PIN 3690)
+// End-to-End Private Messaging
 
 // ─────────────────────────────────────────────────
 //  DOM References
@@ -38,25 +38,25 @@ const pinFeedback        = document.getElementById('pinFeedback');
 const pinBackspaceBtn    = document.getElementById('pinBackspaceBtn');
 
 // ─────────────────────────────────────────────────
-//  User Profiles
+//  User Profiles (Anonymous Codenames: Cipher ↔ Echo)
 // ─────────────────────────────────────────────────
 const USER_PROFILES = {
-  jisu: {
-    userName: 'Jisu',
+  cipher: {
+    userName: 'Cipher',
     pin: '1470',
     opponent: {
-      key: 'jenu',
-      name: 'Jenu',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256'
+      key: 'echo',
+      name: 'Echo',
+      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=256'
     }
   },
-  jenu: {
-    userName: 'Jenu',
+  echo: {
+    userName: 'Echo',
     pin: '3690',
     opponent: {
-      key: 'jisu',
-      name: 'Mr. IC',
-      avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=256'
+      key: 'cipher',
+      name: 'Cipher',
+      avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&q=80&w=256'
     }
   }
 };
@@ -84,17 +84,9 @@ let lastLocalTextLength = 0;
 // Sound
 let soundEnabled = localStorage.getItem('chat_typing_sound') !== 'false';
 let audioCtx     = null;
-let KEYPRESS_AUDIO_BUFFERS = [];
-let audioBuffersLoaded = false;
-let lastSoundIndex = -1;
-const soundBasePath = (window.location.pathname.includes('/static/') ? 'keypresssound/' : 'static/keypresssound/');
-const SOUND_FILES = [
-  'keypress-001.wav','keypress-002.wav','keypress-003.wav','keypress-004.wav',
-  'keypress-005.wav','keypress-006.wav','keypress-007.wav','keypress-008.wav'
-];
 
 // ─────────────────────────────────────────────────
-//  Boot
+//  Boot — Always Lock & Require PIN on Every Load/Reload
 // ─────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
   setupPinPad();
@@ -102,12 +94,9 @@ window.addEventListener('DOMContentLoaded', () => {
   setupKeyboardUIHandling();
   preloadKeypressSounds();
 
-  const saved = sessionStorage.getItem('chat_active_user');
-  if (saved && USER_PROFILES[saved]) {
-    loginUser(saved);
-  } else {
-    lockApp();
-  }
+  // Always require PIN on every fresh open and page reload
+  try { sessionStorage.removeItem('chat_active_user'); } catch (_) {}
+  lockApp();
 });
 
 // ─────────────────────────────────────────────────
@@ -189,8 +178,8 @@ function updatePinDotsUI() {
 }
 
 function verifyPin() {
-  if      (enteredPin === '1470') loginUser('jisu');
-  else if (enteredPin === '3690') loginUser('jenu');
+  if      (enteredPin === '1470') loginUser('cipher');
+  else if (enteredPin === '3690') loginUser('echo');
   else showPinError();
 }
 
@@ -210,7 +199,7 @@ function clearPinFeedback() {
 
 function loginUser(userKey) {
   activeUser = userKey;
-  sessionStorage.setItem('chat_active_user', userKey);
+  try { sessionStorage.removeItem('chat_active_user'); } catch (_) {}
   const profile = USER_PROFILES[userKey];
   currentPartner = { ...profile.opponent };
 
@@ -2244,92 +2233,87 @@ function showToast(message, type = 'info') {
 }
 
 // ─────────────────────────────────────────────────
-//  Keypress Sound System
+//  Keypress Sound System (Synthesized Web Audio — Zero Network Downloads)
 // ─────────────────────────────────────────────────
 function getAudioContext() {
   if (!audioCtx) {
     const Ctx = window.AudioContext || window.webkitAudioContext;
-    if (Ctx) audioCtx = new Ctx();
+    if (Ctx) {
+      audioCtx = new Ctx();
+    }
   }
-  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+  if (audioCtx && audioCtx.state === 'suspended') {
+    audioCtx.resume().catch(() => {});
+  }
   return audioCtx;
 }
 
-async function preloadKeypressSounds() {
-  if (audioBuffersLoaded) return;
-  const ctx = getAudioContext();
-  if (!ctx) return;
-  try {
-    const buffers = await Promise.all(SOUND_FILES.map(async (f) => {
-      const res = await fetch(`${soundBasePath}${f}`);
-      const ab  = await res.arrayBuffer();
-      return ctx.decodeAudioData(ab);
-    }));
-    KEYPRESS_AUDIO_BUFFERS.push(...buffers);
-    audioBuffersLoaded = true;
-  } catch (e) { /* silent */ }
+function preloadKeypressSounds() {
+  // Synthesized in-memory via Web Audio API — no network requests needed
+  getAudioContext();
 }
-
-const fallbackAudio = SOUND_FILES.map((f) => {
-  const a = new Audio(`${soundBasePath}${f}`);
-  a.volume = 0.25;
-  return a;
-});
 
 ['click','keydown','touchstart','mousedown'].forEach(ev =>
-  window.addEventListener(ev, () => { getAudioContext(); preloadKeypressSounds(); }, { once: true, passive: true })
+  window.addEventListener(ev, () => { getAudioContext(); }, { once: true, passive: true })
 );
 
-function playKeypressSound() {
+function playKeypressSound(volumeMultiplier = 1.0) {
   if (!soundEnabled) return;
   const ctx = getAudioContext();
-  let idx = Math.floor(Math.random() * SOUND_FILES.length);
-  if (idx === lastSoundIndex) idx = (idx + 1) % SOUND_FILES.length;
-  lastSoundIndex = idx;
+  if (!ctx) return;
 
-  if (ctx && audioBuffersLoaded && KEYPRESS_AUDIO_BUFFERS[idx]) {
-    try {
-      const src  = ctx.createBufferSource();
-      const gain = ctx.createGain();
-      src.buffer = KEYPRESS_AUDIO_BUFFERS[idx];
-      // 50% volume for subtle and comfortable mechanical key clicks
-      gain.gain.value = 0.25 * (0.96 + Math.random() * 0.08);
-      src.connect(gain);
-      gain.connect(ctx.destination);
-      src.start(0);
-    } catch (_) { /* ignore */ }
-  } else {
-    const clone = fallbackAudio[idx].cloneNode();
-    clone.volume = 0.25;
-    clone.play().catch(() => {});
-  }
+  try {
+    const now = ctx.currentTime;
+
+    // 1. Crisp Mechanical Click Transient
+    const osc = ctx.createOscillator();
+    const oscGain = ctx.createGain();
+    const baseFreq = 1600 + Math.random() * 800;
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(baseFreq, now);
+    osc.frequency.exponentialRampToValueAtTime(100, now + 0.012);
+
+    oscGain.gain.setValueAtTime(0.20 * volumeMultiplier, now);
+    oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.015);
+
+    osc.connect(oscGain);
+    oscGain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.016);
+
+    // 2. Subtle Bottom-out / Thock Resonance
+    const bufferSize = Math.floor(ctx.sampleRate * 0.025);
+    const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const output = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      output[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.005));
+    }
+
+    const noiseSource = ctx.createBufferSource();
+    noiseSource.buffer = noiseBuffer;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(700 + Math.random() * 400, now);
+    filter.Q.setValueAtTime(3.0, now);
+
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.12 * volumeMultiplier, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.025);
+
+    noiseSource.connect(filter);
+    filter.connect(noiseGain);
+    noiseGain.connect(ctx.destination);
+    noiseSource.start(now);
+  } catch (_) { /* ignore */ }
 }
 
-const playOpponentKeypressSound = playKeypressSound;
+const playOpponentKeypressSound = () => playKeypressSound(1.0);
 
 function playOpponentLiveSound() {
   if (!soundEnabled) return;
-  const ctx = getAudioContext();
-  let idx = Math.floor(Math.random() * SOUND_FILES.length);
-  if (idx === lastSoundIndex) idx = (idx + 1) % SOUND_FILES.length;
-  lastSoundIndex = idx;
-
-  if (ctx && audioBuffersLoaded && KEYPRESS_AUDIO_BUFFERS[idx]) {
-    try {
-      const src  = ctx.createBufferSource();
-      const gain = ctx.createGain();
-      src.buffer = KEYPRESS_AUDIO_BUFFERS[idx];
-      // Ultra-gentle, peaceful whisper gain (0.11) for tranquil opponent typing ambiance
-      gain.gain.value = 0.11 * (0.95 + Math.random() * 0.1);
-      src.connect(gain);
-      gain.connect(ctx.destination);
-      src.start(0);
-    } catch (_) { /* ignore */ }
-  } else if (fallbackAudio && fallbackAudio[idx]) {
-    const clone = fallbackAudio[idx].cloneNode();
-    clone.volume = 0.11;
-    clone.play().catch(() => {});
-  }
+  // Ultra-gentle whisper click for opponent live typing
+  playKeypressSound(0.55);
 }
 
 // ─────────────────────────────────────────────────

@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-  <title>Live Chat - Jack King</title>
-  <meta name="description" content="Clean mobile chat application UI with free random avatar API integration.">
+  <title>Live Chat — Private</title>
+  <meta name="description" content="Clean private mobile chat application.">
   <link rel="stylesheet" href="static/style.css?v=4.9">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -30,13 +30,13 @@
       <div class="header-left">
         <!-- Avatar with Free API source (Click to close keyboard / get new random avatar) -->
         <div class="avatar-wrapper" id="avatarWrapper" title="Click to close keyboard">
-          <img id="avatarImg" class="avatar-img" src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=256" alt="Jack King Avatar">
+          <img id="avatarImg" class="avatar-img" src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=256" alt="Anonymous Avatar">
           <span class="avatar-badge" aria-label="Online"></span>
         </div>
 
         <!-- Contact Info (Shows live typing status when opponent types) -->
         <div class="user-info">
-          <h1 class="user-name" id="userName">Jack king</h1>
+          <h1 class="user-name" id="userName">Anonymous</h1>
           <span class="user-status" id="userStatus">Online</span>
         </div>
       </div>
@@ -181,7 +181,7 @@
       </div>
     </div>
 
-    <!-- Personal PIN Input Pad Overlay (Jisu: 1470 • Jenu: 3690) -->
+    <!-- Private PIN Input Pad Overlay -->
     <div class="pin-overlay" id="pinOverlay">
       <div class="pin-card">
         <div class="pin-header">
@@ -192,6 +192,7 @@
             </svg>
           </div>
           <h2 class="pin-title">Enter Passcode</h2>
+          <p class="pin-subtitle">Enter your secret 4-digit PIN</p>
         </div>
 
         <!-- 4 PIN Dots Indicator -->
@@ -244,6 +245,6 @@
     </div>
   </div>
 
-  <script src="static/app.js?v=4.7"></script>
+  <script src="static/app.js?v=5.1"></script>
 </body>
 </html>

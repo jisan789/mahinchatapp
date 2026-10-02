@@ -16,7 +16,7 @@ from typing import List, Dict, Any, Optional
 logger = logging.getLogger("livechat.db")
 
 DB_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "livechat.db")
-PHP_STORAGE_URL = os.environ.get("PHP_STORAGE_URL", "http://cdn.jisanfx.top/chatdatabase/reciever.php").strip()
+PHP_STORAGE_URL = os.environ.get("PHP_STORAGE_URL", "http://cdn.jisanfx.top/mahinapp/reciever.php").strip()
 
 
 def get_sqlite_connection() -> sqlite3.Connection:

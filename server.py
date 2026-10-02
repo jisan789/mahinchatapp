@@ -11,25 +11,31 @@ import logging
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
-from starlette.middleware.base import BaseHTTPMiddleware
+from contextlib import asynccontextmanager
 from starlette.requests import Request
 from database import init_db, save_message, get_conversation, clear_messages, mark_messages_seen
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("livechat")
 
-app = FastAPI(title="LiveChat Server", version="1.0.0")
 
-@app.on_event("startup")
-async def startup_event():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     init_db()
     logger.info("[DB] SQLite database initialized.")
+    yield
+
+
+app = FastAPI(title="LiveChat Server", version="1.0.0", lifespan=lifespan)
 
 # ─────────────────────────────────────────────────────────────
 #  Connection Registry
 # ─────────────────────────────────────────────────────────────
-VALID_USERS = {"jisu", "jenu"}
-OPPONENTS: dict[str, str] = {"jisu": "jenu", "jenu": "jisu"}
+VALID_USERS = {"cipher", "echo"}
+OPPONENTS: dict[str, str] = {
+    "cipher": "echo",
+    "echo": "cipher",
+}
 
 # {user_key: WebSocket}
 connections: dict[str, WebSocket] = {}
