@@ -43,7 +43,7 @@ const pinBackspaceBtn    = document.getElementById('pinBackspaceBtn');
 const USER_PROFILES = {
   cipher: {
     userName: 'Cipher',
-    pin: '1470',
+    pin: '1355',
     opponent: {
       key: 'echo',
       name: 'Echo',
@@ -52,7 +52,7 @@ const USER_PROFILES = {
   },
   echo: {
     userName: 'Echo',
-    pin: '3690',
+    pin: '5513',
     opponent: {
       key: 'cipher',
       name: 'Cipher',
@@ -178,8 +178,8 @@ function updatePinDotsUI() {
 }
 
 function verifyPin() {
-  if      (enteredPin === '1470') loginUser('cipher');
-  else if (enteredPin === '3690') loginUser('echo');
+  if      (enteredPin === '1355') loginUser('cipher');
+  else if (enteredPin === '5513') loginUser('echo');
   else showPinError();
 }
 
